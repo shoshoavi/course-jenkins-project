@@ -11,49 +11,56 @@ pipeline {
 
         stage('Setup Virtual Env') {
             steps {
-                sh '''
-                    pwd
-                    ls
-                    python3 -m venv ${VENV_DIR}
-                    . ${VENV_DIR}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                '''
+                dir('04-docker') {
+                    sh '''
+                        python3 -m venv ${VENV_DIR}
+                        . ${VENV_DIR}/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                    '''
+                }
             }
         }
 
         stage('Test') {
             steps {
-                sh '''
-                    pwd
-                    . ${VENV_DIR}/bin/activate
-                    pytest
-                '''
+                dir('04-docker') {
+                    sh '''
+                        . ${VENV_DIR}/bin/activate
+                        pytest
+                    '''
+                }
             }
         }
 
-        stage('Login to docker hub') {
+        stage('Login to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    sh 'echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin'
-                    echo 'Login successfully'
+                dir('04-docker') {
+                    withCredentials([usernamePassword(credentialsId: 'docker-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh 'echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin'
+                        echo 'Login successfully'
+                    }
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${IMAGE_TAG} .'
-                echo "Docker image build successfully"
-                sh 'docker image ls'
+                dir('04-docker') {
+                    sh 'docker build -t ${IMAGE_TAG} .'
+                    echo "Docker image built successfully"
+                    sh 'docker image ls'
+                }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh 'docker push ${IMAGE_TAG}'
-                echo "Docker image push successfully"
+                dir('04-docker') {
+                    sh 'docker push ${IMAGE_TAG}'
+                    echo "Docker image pushed successfully"
+                }
             }
-        }      
+        }
     }
 }
