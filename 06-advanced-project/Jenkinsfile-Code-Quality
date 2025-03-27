@@ -22,14 +22,10 @@ pipeline {
             }
         }
 
-        stage('Install Poetry') {
+        stage('Setup') {
             steps {
                 dir('06-advanced-project') {
-                    sh '''
-                    curl -sSL https://install.python-poetry.org | python3 -
-                    export PATH="$HOME/.local/bin:$PATH"
-                    poetry --version
-                    '''
+                    sh "poetry install --with dev"
                 }
             }
         }
